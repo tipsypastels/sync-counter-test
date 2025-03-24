@@ -1,26 +1,23 @@
-import type { Signal } from "@preact/signals";
-import { useEffect } from "preact/hooks";
+import { type Signal } from "@preact/signals";
+import { useEffect, useRef } from "preact/hooks";
 import { Button } from "../components/Button.tsx";
+import type { WsClickEvent, WsCountEvent } from "../routes/ws.ts";
 
 interface CounterProps {
   count: Signal<number>;
 }
 
 export default function Counter(props: CounterProps) {
-  useSubscriber(props.count);
+  const submit = useSubscriber(props.count);
 
-  async function decrement() {
+  function decrement() {
     props.count.value -= 1;
-    await submit("dec");
+    submit("dec");
   }
 
-  async function increment() {
+  function increment() {
     props.count.value += 1;
-    await submit("inc");
-  }
-
-  async function submit(type: "inc" | "dec") {
-    await fetch("/click", { method: "post", body: JSON.stringify({ type }) });
+    submit("inc");
   }
 
   return (
@@ -33,16 +30,30 @@ export default function Counter(props: CounterProps) {
 }
 
 function useSubscriber(count: Signal<number>) {
-  useEffect(() => {
-    const stream = new EventSource("/stream");
+  const ref = useRef<WebSocket>();
 
-    stream.onmessage = (e) => {
-      console.log(e);
+  useEffect(() => {
+    const wsUrl = new URL("./ws", location.origin);
+    wsUrl.protocol = wsUrl.protocol.replace("http", "ws");
+
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (e: MessageEvent<string>) => {
+      const data: WsCountEvent = JSON.parse(e.data);
+      if (data.type === "count") {
+        count.value = data.count;
+      }
     };
+
+    ref.current = ws;
 
     return () => {
-      console.log("closing stream");
-      stream.close();
+      ref.current?.close();
     };
   }, []);
+
+  return (kind: "inc" | "dec") => {
+    const data: WsClickEvent = { type: "click", kind };
+    ref.current?.send(JSON.stringify(data));
+  };
 }

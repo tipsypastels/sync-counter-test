@@ -13,6 +13,8 @@ export async function updateCount(f: (n: number) => number) {
   await kv.atomic().check(currentRes).set(countKey, next).commit();
 }
 
-export function listenCount() {
-  return kv.watch<[number]>([countKey]);
+export async function* listenCount() {
+  for await (const [{ value }] of kv.watch<[number]>([countKey])) {
+    if (value != null) yield value;
+  }
 }
