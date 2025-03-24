@@ -1,7 +1,10 @@
 import { type Signal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { Button } from "../components/Button.tsx";
-import type { WsClickEvent, WsCountEvent } from "../routes/ws.ts";
+import type {
+  CounterClickEventData,
+  CounterCountEventData,
+} from "../library/events.d.ts";
 
 interface CounterProps {
   count: Signal<number>;
@@ -39,7 +42,7 @@ function useSubscriber(count: Signal<number>) {
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (e: MessageEvent<string>) => {
-      const data: WsCountEvent = JSON.parse(e.data);
+      const data: CounterCountEventData = JSON.parse(e.data);
       if (data.type === "count") {
         count.value = data.count;
       }
@@ -53,7 +56,7 @@ function useSubscriber(count: Signal<number>) {
   }, []);
 
   return (kind: "inc" | "dec") => {
-    const data: WsClickEvent = { type: "click", kind };
+    const data: CounterClickEventData = { type: "click", kind };
     ref.current?.send(JSON.stringify(data));
   };
 }

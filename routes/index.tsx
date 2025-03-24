@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { useSignal } from "@preact/signals";
 import Counter from "../islands/Counter.tsx";
-import { getCount } from "../server/db.ts";
+import { getCount } from "../library/count.ts";
 
 interface HomeProps {
   count: number;
