@@ -1,8 +1,15 @@
+import { Handlers, PageProps } from "$fresh/server.ts";
 import { useSignal } from "@preact/signals";
 import Counter from "../islands/Counter.tsx";
+import { getCount } from "../server/db.ts";
 
-export default function Home() {
-  const count = useSignal(3);
+interface HomeProps {
+  count: number;
+}
+
+export default function Home(props: PageProps<HomeProps>) {
+  const count = useSignal(props.data.count);
+
   return (
     <div class="px-4 py-8 mx-auto bg-[#86efac]">
       <div class="max-w-screen-md mx-auto flex flex-col items-center justify-center">
@@ -23,3 +30,10 @@ export default function Home() {
     </div>
   );
 }
+
+export const handler: Handlers<HomeProps> = {
+  async GET(_req, ctx) {
+    const count = await getCount();
+    return ctx.render({ count });
+  },
+};
